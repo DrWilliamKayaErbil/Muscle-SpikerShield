@@ -1,7 +1,7 @@
   /*
   * ----------------------------------------------------------------------------------------------------
   * Backyard Brains 2015
-  * Muscle Spiker Shield Arduino UNO Code for Control of Robotic Claw
+  * Muscle SpikerShield Arduino UNO Code for Control of Robotic Claw
   *
   * Code monitors amplitude of EMG envelope, displays EMG strength on LED bar and controls 
   * robotic claw by controlling servo motor.
@@ -10,7 +10,7 @@
   * Written by Marcio Amorim
   * Updated by Stanislav Mircic
   *
-  * Tested with Muscle Spiker Shield V2.31
+  * Tested with Muscle SpikerShield V2.31
   * ----------------------------------------------------------------------------------------------------
   */
   
