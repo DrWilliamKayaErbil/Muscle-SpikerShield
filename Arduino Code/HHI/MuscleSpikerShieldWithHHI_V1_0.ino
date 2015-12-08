@@ -14,7 +14,6 @@
   * ----------------------------------------------------------------------------------------------------
   */  
   
-  #include <Servo.h>  
   #define RELAY_PIN 3                         //pin for relay that controls TENS device
   #define SENSITIVITY_BUTTON_PIN 7            //pin for button that selects sesitivity
   #define NUM_LED 6                           //number of LEDs in LED bar
@@ -58,7 +57,7 @@
   //   - Checks state of sesitivity button
   //   - Measure EMG
   //   - Shows EMG strength on LED bar
-  //   - Turn ON of OFF the relay for TENS device
+  //   - Turns ON or OFF the relay for TENS device
   // ----------------------------------------------------------------------------------
   void loop()
   {
