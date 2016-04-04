@@ -2,11 +2,10 @@
   /*
   * ----------------------------------------------------------------------------------------------------
   * Backyard Brains 2015
-  * Muscle SpikerShield Arduino UNO Code for Control of external relay
-  * (used for experiment of EMG controlled extension cord)
+  * Muscle SpikerShield Arduino UNO Code for Control of onboard relay
   *
   * Code monitors amplitude of EMG envelope, displays EMG strength on LED bar and can control 
-  * (ON/OFF) anything that is connected to pin 2 of Arduino board.
+  * (ON/OFF) relay on the Muscle SpikerShield board.
   * 
   * V1.0
   * Written by Marcio Amorim
@@ -16,7 +15,7 @@
   * ----------------------------------------------------------------------------------------------------
   */
   #define NUMBER_OF_LEDS 6                    //Number of LEDs in LED bar
-  #define OUTPUT_PIN 2                        //Output pin (change to 3 if you want to use on-board relay)
+  #define OUTPUT_PIN 3                        //Relay pin
   #define OPERATION_MODE_BUTTON_PIN 7         //pin for button that controls operation mode
   #define SENSITIVITY_BUTTON_PIN 4            //pin for button that controls sensitivity
   #define INDICATOR_LED_PIN 13                //pin for LED that indicates state of output
@@ -74,7 +73,7 @@
   //   - Checks state of default-claw-state button
   //   - Measure EMG
   //   - Shows EMG strength on LED bar
-  //   - Sets angle of servo based on EMG strength and current mode (open/closed)
+  //   - Sets state of the Relay ON/OFF
   // ----------------------------------------------------------------------------------
   void loop()
   {

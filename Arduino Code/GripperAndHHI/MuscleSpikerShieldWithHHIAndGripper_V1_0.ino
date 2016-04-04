@@ -1,46 +1,50 @@
-  /*
+ /*
   * ----------------------------------------------------------------------------------------------------
   * Backyard Brains 2015
-  * Muscle SpikerShield Arduino UNO Code for Control of Robotic Claw
+  * Muscle SpikerShield Arduino UNO Code for Human-Human-Interface
   *
-  * Code monitors amplitude of EMG envelope, displays EMG strength on LED bar and controls 
-  * robotic claw by controlling servo motor.
+  * Code monitors amplitude of EMG envelope, displays EMG strength on LED bar, controls 
+  * relay that turns on/off a TENS (Transcutaneous Electrical Nerve Stimulation) device
+  * and controls servo for gripper.
   * 
   * V1.0
-  * Written by Marcio Amorim
   * Updated by Stanislav Mircic
   *
   * Tested with Muscle SpikerShield V2.31
   * ----------------------------------------------------------------------------------------------------
-  */
+  */  
   
   #include <Servo.h>  
-  #define CLAW_STATE_BUTTON_PIN 4             //pin for button that switches defult state of the claw (opened/closed)
+  #define GRIPPER_STATE_BUTTON_PIN 4          //pin for button that switches defult state of the gripper (opened/closed)
   #define SERVO_PIN 2                         //pin for servo motor
+  
+  #define RELAY_PIN 3                         //pin for relay that controls TENS device
   #define SENSITIVITY_BUTTON_PIN 7            //pin for button that selects sesitivity
   #define NUM_LED 6                           //number of LEDs in LED bar
-  #define CLAW_MINIMUM_STEP 5                 //5 degree dead zone (used to avoid aiming oscilation)
-  #define OPEN_MODE 1                         //default claw state is opened
-  #define CLOSED_MODE 2                       //default claw state is closed
+  #define RELAY_THRESHOLD 4                   //defines sensitivity of relay
+  #define GRIPPER_MINIMUM_STEP 5              //5 degree dead zone (used to avoid aiming oscilation)
+  #define OPEN_MODE 1                         //default gripper state is opened
+  #define CLOSED_MODE 2                       //default gripper state is closed
   #define MINIMUM_SERVO_UPDATE_TIME 100       //update servo position every 100ms
-  
-  Servo Claw;                                 //servo for claw
+
+  Servo Gripper;                              //servo for gripper
   byte ledPins[] = {8, 9, 10, 11, 12, 13};    //pins for LEDs in LED bar
   
-  //EMG saturation values (when EMG reaches this value the claw will be fully opened/closed)
+  //EMG saturation values (when EMG reaches this value the TENS relay will be activated)
   int sensitivities[] = {200, 350, 520, 680, 840, 1000};
   int lastSensitivitiesIndex = 2;             //set initial sensitivity index
   
   int emgSaturationValue = 0;                 //selected sensitivity/EMG saturation value
   int analogReadings;                         //measured value for EMG
   byte ledbarHeight = 0;                      //temporary variable for led bar height
-  
+
   unsigned long oldTime = 0;                  //timestamp of last servo angle update (ms)
   int oldDegrees = 0;                         //old value of angle for servo
   int newDegree;                              //new value of angle for servo
   
+
   unsigned long debouncerTimer = 0;           //timer for button debouncer         
-  int clawStateButtonValue = 0;               //temporary variable that stores state of button 
+  int gripperStateButtonValue = 0;            //temporary variable that stores state of button 
   int userReleasedButton = 1;                 //flag that is used to avoid multiple button events when user holds button
   
   int currentFunctionality = OPEN_MODE;       //current default position of claw
@@ -48,16 +52,19 @@
 
 
   //-----------------------------------------------------------------------------------
-  //   Setup servo, inputs and outputs
+  //   Setup servo inputs and outputs
   // ----------------------------------------------------------------------------------
   void setup(){
     //init servo
-    Claw.attach(SERVO_PIN); 
+    Gripper.attach(SERVO_PIN); 
     
     //init button pins to input   
-    pinMode(CLAW_STATE_BUTTON_PIN, INPUT);                             
-    pinMode(SENSITIVITY_BUTTON_PIN, INPUT);                            
+    pinMode(GRIPPER_STATE_BUTTON_PIN, INPUT);                             
+    pinMode(SENSITIVITY_BUTTON_PIN, INPUT);     
     
+    //init relay pin to output    
+    pinMode(RELAY_PIN, OUTPUT); 
+    digitalWrite(RELAY_PIN, LOW);
     //initialize all LED pins to output
     for(int i = 0; i < NUM_LED; i++){ 
       pinMode(ledPins[i], OUTPUT);
@@ -73,9 +80,10 @@
   //   Main loop
   //
   //   - Checks state of sesitivity button
-  //   - Checks state of default-claw-state button
+  //   - Checks state of default-gripper-state button
   //   - Measure EMG
   //   - Shows EMG strength on LED bar
+  //   - Turns ON or OFF the relay for TENS device
   //   - Sets angle of servo based on EMG strength and current mode (open/closed)
   // ----------------------------------------------------------------------------------
   void loop()
@@ -113,16 +121,15 @@
             //whait a bit more so that LED light feedback is always visible
             delay(100);        
         }
- 
-    
-        //----------------------------  Switch claw default position open/close --------------------
+        
+        //----------------------------  Switch gripper default position open/close --------------------
      
         //check if enough time has passed for button contact to settle down
         if((millis() - debouncerTimer) > 50)
         {
-            clawStateButtonValue = digitalRead(CLAW_STATE_BUTTON_PIN);
+            gripperStateButtonValue = digitalRead(GRIPPER_STATE_BUTTON_PIN);
             //if button is pressed
-            if(clawStateButtonValue == HIGH)
+            if(gripperStateButtonValue == HIGH)
             {
                 //if last time we checked button was not pressed
                 if(userReleasedButton)
@@ -147,8 +154,6 @@
                 userReleasedButton = 1;
              }
         }
-
-
         //-----------------------------  Measure EMG -----------------------------------------------
     
         analogReadings = analogRead(A0);//read EMG value from analog input A0
@@ -171,7 +176,7 @@
         {
           digitalWrite(ledPins[k], HIGH);
         }
-   
+        
 
         //-------------------- Drive Claw according to EMG strength -----------------------------
         
@@ -191,14 +196,27 @@
               }
           
               //check if we are in servo dead zone
-              if(abs(newDegree-oldDegrees) > CLAW_MINIMUM_STEP)
+              if(abs(newDegree-oldDegrees) > GRIPPER_MINIMUM_STEP)
               {
                  //set new servo angle
-                 Claw.write(newDegree); 
+                 Gripper.write(newDegree); 
               }
               oldTime = millis();
               oldDegrees = newDegree;
         }
+
+
+         //----------------------- Turn ON/OFF relay for TENS ---------------------------------------
+        
+        //Turn ON relay if EMG is greater than threshold value
+        //(threshold is expressed in LED bar height units)
+        if(ledbarHeight>RELAY_THRESHOLD)
+        {
+          digitalWrite(RELAY_PIN, HIGH);
+          delay(50);
+        }
+        else
+        {
+          digitalWrite(RELAY_PIN, LOW);
+        }
 }
-
-
